@@ -5,10 +5,10 @@ from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.schemas.auth import GoogleLoginRequest, RefreshRequest, TokenPair, LogoutRequest
 from app.schemas.user import UserClaims
-from app.core.revocation import revoke_refresh, is_refresh_revoked
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# 🔹 Google 로그인
 @router.post("/google", response_model=TokenPair)
 def login_with_google(body: GoogleLoginRequest):
     try:
@@ -31,18 +31,15 @@ def login_with_google(body: GoogleLoginRequest):
     refresh = create_refresh_token(claims)
     return TokenPair(access_token=access, refresh_token=refresh)
 
+
+# 🔹 Refresh 토큰 재발급
 @router.post("/refresh", response_model=TokenPair)
 def refresh_tokens(body: RefreshRequest):
-    # 1) 블랙리스트 여부 우선 확인
-    if is_refresh_revoked(body.refresh_token):
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
-
     try:
         payload = decode_token(body.refresh_token)
         if payload.get("typ") != "refresh":
             raise ValueError("Not a refresh token")
         user_claims = payload.get("usr") or {}
-        exp_unix = payload.get("exp")  # 로그아웃 시 보관용
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
@@ -51,20 +48,12 @@ def refresh_tokens(body: RefreshRequest):
 
     return TokenPair(access_token=access, refresh_token=new_refresh)
 
+
+# 🔹 로그아웃 (서버는 상태를 저장하지 않음)
 @router.post("/logout")
 def logout(body: LogoutRequest):
     """
     클라이언트: 로컬/쿠키에 저장된 access/refresh 삭제
-    서버(선택): 전달된 refresh_token이 있으면 블랙리스트 등록
+    서버: 블랙리스트 관리하지 않음 (무상태 설계)
     """
-    if body.refresh_token:
-        # exp를 알 수 있으면 함께 저장 (없어도 보수적 TTL로 저장됨)
-        try:
-            payload = decode_token(body.refresh_token)
-            exp_unix = payload.get("exp")
-        except Exception:
-            exp_unix = None
-        revoke_refresh(body.refresh_token, exp_unix)
-
-    # 서버는 상태를 거의 가지지 않으므로 200 OK만 반환
     return {"detail": "logged out"}
