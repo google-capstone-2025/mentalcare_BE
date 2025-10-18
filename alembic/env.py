@@ -1,68 +1,67 @@
-from __future__ import annotations
-
-import asyncio
+# alembic/env.py
 from logging.config import fileConfig
-from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-
+import os
+import sys
+from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# -------- App imports --------
-from app.core.config import settings
-from app.db.base import Base
-from app.models import item  # 모델을 import하여 메타데이터에 등록
+# ── 1) 프로젝트 루트 경로 추가 (alembic/에서 한 단계 위) ────────────────
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
 
-# -----------------------------
+# ── 2) Base 메타데이터 로드 + 모델 모듈 로드(사이드이펙트로 테이블 등록) ──
+from app.db.base_class import Base        # ← Base 선언부 (파일명이 base_class면 여기 맞춰야 함)
+import app.models                          # ← 모델들 전부 import되어 Base.metadata에 테이블 등록
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# ── 3) Alembic 기본 설정 ────────────────────────────────────────────────
 config = context.config
-
-# Interpret the config file for Python logging.
-if config.config_file_name is not None:
+if config.config_file_name:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
 
-def get_url() -> str:
-    return settings.DATABASE_URL  # e.g. postgresql+asyncpg://...
+# ── 4) DSN 결정: 환경변수 우선, 없으면 alembic.ini의 sqlalchemy.url ──────
+def get_database_url() -> str:
+    env_url = os.getenv("DATABASE_URL")
+    if env_url:
+        print(f"[alembic] Using DATABASE_URL: {env_url}")  # 디버그
+        return env_url
+    ini_url = config.get_main_option("sqlalchemy.url")
+    print(f"[alembic] Using ini sqlalchemy.url: {ini_url}")  # 디버그
+    return ini_url
 
-def run_migrations_offline() -> None:
-    url = get_url()
+# ── 5) 마이그레이션 실행 로직(offline/online) ────────────────────────────
+def run_migrations_offline():
+    url = get_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        compare_server_default=True,
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
-def do_run_migrations(connection):
-    context.configure(
-        connection=connection,
-        target_metadata=target_metadata,
-        compare_type=True,
+def run_migrations_online():
+    # sqlalchemy.url 대신 우리가 정한 url을 명시적으로 넘김
+    connectable = engine_from_config(
+        {**config.get_section(config.config_ini_section, {}), "sqlalchemy.url": get_database_url()},
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
     )
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+            compare_server_default=True,
+        )
+        with context.begin_transaction():
+            context.run_migrations()
 
-    with context.begin_transaction():
-        context.run_migrations()
-
-async def run_migrations_online() -> None:
-    connectable = create_async_engine(get_url(), poolclass=pool.NullPool)
-
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-
-    await connectable.dispose()
-
-def run_migrations():
-    if context.is_offline_mode():
-        run_migrations_offline()
-    else:
-        asyncio.run(run_migrations_online())
-
-run_migrations()
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.core.security import get_current_user  # JWT 가드가 없으면 임시로 주석 처리해도 됨
 from app.schemas.uploads import UploadTextRequest, UploadResponse
-from app.models.input import Input, Modality  # Modality가 없으면 text로 고정
+from app.models.input import Inputs, InputFiles 
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 
