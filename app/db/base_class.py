@@ -1,6 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, declared_attr
 from sqlalchemy import MetaData
-
 # naming convention for Alembic-friendly constraints
 metadata = MetaData(naming_convention={
     "ix": "ix_%(column_0_N_label)s",

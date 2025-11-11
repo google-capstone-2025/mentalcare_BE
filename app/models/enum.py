@@ -1,51 +1,31 @@
+# app/models/enum.py
 from enum import Enum
-from sqlalchemy import Enum as PgEnum
+from sqlalchemy import Enum as SAEnum
 
-# ----- DDL에서 언급된 타입들 -----
-# provider, input_channel, input_type, emotion, model_name, severity
-
+# ✅ 1. Python Enum 정의
+# (서비스에서 사용하는 OAuth 제공자 목록 — 현재는 google만)
 class Provider(str, Enum):
-    google = "google"
-    apple = "apple"
-    kakao = "kakao"
-    naver = "naver"
+    GOOGLE = "google"
 
-class InputChannel(str, Enum):
-    text = "text"
-    audio = "audio"
-    image = "image"
-    file = "file"
+# ✅ 2. SQLAlchemy용 Enum 타입 객체 정의
+# name="provider_enum" → DB에 생성될 PostgreSQL ENUM 이름
+# native_enum=True → PostgreSQL의 ENUM 타입으로 실제 생성
+# create_type=True → Alembic이 ENUM 타입을 새로 생성하게 허용
+ProviderSAEnum = SAEnum(
+    Provider,
+    name="provider_enum",
+    native_enum=True,
+    create_type=True
+)
 
 class InputType(str, Enum):
-    user = "user"
-    assistant = "assistant"
-    system = "system"
+    TEXT = "text"
+    IMAGE = "image"
+    AUDIO = "audio"
 
-class Emotion(str, Enum):
-    calm = "calm"
-    happy = "happy"
-    sad = "sad"
-    angry = "angry"
-    anxious = "anxious"
-    stressed = "stressed"
-    frustrated = "frustrated"
-    # 필요 시 추가
-
-class ModelName(str, Enum):
-    gemini_flash = "gemini-flash"
-    gemini_nano = "gemini-nano"
-    # 버전 태그는 raw/jsonB로 보관해도 됨
-
-class Severity(str, Enum):
-    low = "low"
-    medium = "medium"
-    high = "high"
-    critical = "critical"
-
-# SQLAlchemy 컬럼에서 재사용할 Enum 팩토리
-ProviderEnum = PgEnum(Provider, name="provider", create_type=False)
-InputChannelEnum = PgEnum(InputChannel, name="input_channel", create_type=False)
-InputTypeEnum = PgEnum(InputType, name="input_type", create_type=False)
-EmotionEnum = PgEnum(Emotion, name="emotion", create_type=False)
-ModelNameEnum = PgEnum(ModelName, name="model_name", create_type=False)
-SeverityEnum = PgEnum(Severity, name="severity", create_type=False)
+InputTypeSAEnum = SAEnum(
+    InputType,
+    name="input_type_enum",
+    native_enum=True,
+    create_type=True
+)

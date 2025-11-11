@@ -5,7 +5,7 @@ from typing import List
 from app.db.session import get_db
 from app.core.security import get_current_user
 from app.models.reports import SessionReport, WeeklyReport
-from app.models.conversation import Conversation    #conversation 테이블 아직 X
+from app.models.chat_session import ChatSession
 from app.schemas.reports import SessionReportList, WeeklyReportList, SessionReportDetail, WeeklyReportDetail
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
@@ -20,7 +20,7 @@ def get_session_list(
     session_reports = (                                 
         db.query(SessionReport)
         .join(SessionReport.conversation)
-        .filter(Conversation.user_id == user.id)
+        .filter(ChatSession.user_id == user.id)
         .order_by(SessionReport.created_at.desc())
         .all()
     )
@@ -58,7 +58,7 @@ def get_report_detail(
         .join(SessionReport.conversation)
         .filter(
             SessionReport.report_id == report_id,
-            Conversation.user_id == user.id
+            ChatSession.user_id == user.id
         )
         .first()
     )

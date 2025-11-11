@@ -9,8 +9,7 @@ from sqlalchemy.orm import sessionmaker, Session
 # ── 환경변수에서 DSN/로깅 읽기 ─────────────────────────────────────────────
 # 예) postgresql+psycopg://USER:PASS@HOST:PORT/DBNAME
 DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg://mental_admin:9641@localhost:5432/mentalcare",
+    "DATABASE_URL"
 )
 
 # 개발 중 SQL 로그 보고 싶으면 환경변수로 켜기: set DEBUG_SQL=1
