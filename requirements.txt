@@ -31,3 +31,5 @@ watchfiles==1.1.0
 websockets==15.0.1
 google-auth>=2.0.0
 google-auth-oauthlib>=1.0.0
+redis
+PyJWT
