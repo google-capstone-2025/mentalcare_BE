@@ -2,20 +2,18 @@
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
 
-# ✅ 1. Python Enum 정의
-# (서비스에서 사용하는 OAuth 제공자 목록 — 현재는 google만)
+# -----------------------------------
+# 기존 Provider, InputType 그대로 유지
+# -----------------------------------
+
 class Provider(str, Enum):
     GOOGLE = "google"
 
-# ✅ 2. SQLAlchemy용 Enum 타입 객체 정의
-# name="provider_enum" → DB에 생성될 PostgreSQL ENUM 이름
-# native_enum=True → PostgreSQL의 ENUM 타입으로 실제 생성
-# create_type=True → Alembic이 ENUM 타입을 새로 생성하게 허용
 ProviderSAEnum = SAEnum(
     Provider,
     name="provider_enum",
     native_enum=True,
-    create_type=True
+    create_type=True,
 )
 
 class InputType(str, Enum):
@@ -27,5 +25,30 @@ InputTypeSAEnum = SAEnum(
     InputType,
     name="input_type_enum",
     native_enum=True,
-    create_type=True
+    create_type=True,
 )
+
+# -----------------------------------
+# NEW: AI 모델 Enum 추가
+# -----------------------------------
+
+class AIModel(str, Enum):
+    """
+    Google Gemini 모델 이름을 관리하는 Enum.
+    문자열 오타를 방지하고, 서비스 코드에서 안정적으로 참조하도록 한다.
+    """
+
+    #  텍스트 모델
+    GEMINI_PRO = "gemini-2.0-pro"
+    GEMINI_PRO_EXP = "gemini-2.0-pro-exp"     # 확장(Pro Experimental) 버전
+    GEMINI_FLASH = "gemini-2.0-flash"
+    GEMINI_FLASH_LITE = "gemini-2.0-flash-lite"
+
+    # 초경량(Nano) 모델
+    GEMINI_NANO = "gemini-2.0-nano"
+    GEMINI_NANOBANANA = "gemini-2.0-nanobanana"  # 너가 언급한 'nanobanana' 대응
+
+    # 👁 멀티모달 / 이미지 기반 모델
+    GEMINI_PRO_VISION = "gemini-2.0-pro-vision"
+    GEMINI_FLASH_VISION = "gemini-2.0-flash-vision"
+
