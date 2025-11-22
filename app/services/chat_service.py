@@ -3,7 +3,6 @@ import json
 
 from app.services.rag_service import retrieve, aggregate
 from app.services.compose_service import compose
-from app.services.llm_service import summarize_llm
 from app.models import Inputs
 from redis import Redis
 from sqlalchemy.orm import Session
@@ -16,7 +15,7 @@ def run_full_rag(session_id: str, user_msg: str, user_profile: dict, db: Session
     # 1. RAG 수행   (flag로 추가 정보 필요 유무 구분    1이면 rag재수행  2면 솔루션 정상 제공, 평문 응답 llm)
     retrieved = retrieve(user_msg)
     if (retrieve 실패): # retrieve단계에서 솔루션 vector검색 실패했을 때의 llm 답변 토대로 조건 설정
-        return {"msg": "추가정보 필요", "flag": 1} # msg는 임의로 설정함.
+       return {"msg": "추가정보 필요", "flag": 1} # msg는 임의로 설정함.
 
     aggregated = aggregate(retrieved["docs"]) #retrieve에서 솔루션 성공하면 
     composed = compose(
@@ -28,12 +27,7 @@ def run_full_rag(session_id: str, user_msg: str, user_profile: dict, db: Session
     save_message(session_id, "assistant", composed["message"], db)
 
     # 3. 솔루션 저장    (기존 delibered_solution 삭제 -> 어차피 리포트에 담을건 이러한 솔루션을 했다 정도 이므로 chat_session 테이블에 solution.id 기록해서 참조하는 방식으로?)
-    solution_row = Delibered_solutions(
-        conversation_id=conversation_id,
-        solution_id=aggregated["routine_draft"].get("id", str(uuid.uuid4())) # 원래 이부분에서 routine_draft는 solution이 저장된 테이블에서 벡터 검색하므로 가져올때 solution.id도 가져와서 저장하는 것으로 구상
-    )
-    db.add(solution_row)
-    db.commit()
+    
 
     # 4. 결과 반환
     return {"result": composed, "flag": 0}
@@ -111,6 +105,16 @@ def get_sum_messages(session_id: str):
     raw = redis_client.get(key_sum)
 
     return json.loads(raw) if raw else None
+
+
+def plain_llm(session_id: str, user_msg, db: Session):
+    msg = "이거는 평문 llm" # 여기서 msg값에 llm호출 후 결과 반환
+    save_message(session_id, "assistant", msg, db)  #llm 답변 저장
+    return msg
+
+
+def summarize_llm():
+    pass
 
 # 채팅 종료 누르면 요약 1번더, gcs 업로드
 # llm을 이용한 요약 생성

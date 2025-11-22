@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.core.security import get_current_user
-from app.schemas.chat import ChatResponse
+from app.schemas.chat import ChatResponse, SendMessageRequest, SendMessageOutput
 from app.models.chat_session import ChatSession
 from app.models.input import Inputs
 from app.services.chat_service import run_full_rag, save_message, plain_llm
+
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
@@ -22,18 +23,21 @@ def create_session_id(
     db.commit()
     db.refresh(session_id) 
 
-    return session_id
+    return {"session_id": session_id.id}
 
     
 # 사용자가 메세지 전송 누를때마다 호출
-@router.post("/{session_id}/message")
+@router.post("/{session_id}/message", response_model=SendMessageOutput)
 def send_message(
     session_id: str,
-    user_msg: str,
-    flag: int,
+    payload: SendMessageRequest,
     db: Session = Depends(get_db),
     user = Depends(get_current_user)
 ):
+    
+    user_msg = payload.user_msg
+    flag = payload.flag
+
     #사용자 입력 저장
     save_message(session_id, "user", user_msg, db)
 
