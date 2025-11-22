@@ -46,7 +46,7 @@ class ChatSession(Base):
 
     # 관계: Input만 연결(선택). 필요 없으면 아래 4줄을 삭제해도 동작합니다.
     inputs = relationship(
-        "Input",
+        "Inputs",
         back_populates="session",
         cascade="all, delete-orphan"
     )

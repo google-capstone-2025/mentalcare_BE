@@ -6,13 +6,21 @@ from app.routers import auth, retrieve, aggregate, compose, uploads
 from app.core.security import decode_token
 from app.schemas.user import UserClaims
 from app.core.redis_client import redis_client
+from app import models
 
-app = FastAPI(title="Auth API (no /api/v1 prefix)")
+
+app = FastAPI()
+
+origins = [
+    "http://localhost:8081",  # Expo Web dev 서버
+    "http://127.0.0.1:8081",
+]
+
 
 # --- CORS 설정 ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

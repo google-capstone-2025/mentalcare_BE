@@ -38,6 +38,20 @@ class Users(Base):
         cascade="all, delete-orphan",
     )
 
+    # 🔹 새로 추가: Inputs와의 관계
+    inputs: Mapped[list["Inputs"]] = relationship(
+        "Inputs",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    # 🔹 주간 리포트와의 관계 추가
+    weekly_reports: Mapped[list["WeeklyReport"]] = relationship(
+        "WeeklyReport",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
 
 class OAuthIdentities(Base):
     __tablename__ = "oauth_identities"
